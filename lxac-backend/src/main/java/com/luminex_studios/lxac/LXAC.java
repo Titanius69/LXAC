@@ -1,6 +1,10 @@
 package com.luminex_studios.lxac;
 
-import com.luminex_studios.lxac.checks.FlightAChecker;
+import com.luminex_studios.lxac.checks.baritone.BaritoneAChecker;
+import com.luminex_studios.lxac.checks.baritone.RoboticAChecker;
+import com.luminex_studios.lxac.checks.flight.FlightAChecker;
+import com.luminex_studios.lxac.checks.nuker.*;
+import com.luminex_studios.lxac.checks.reach.ReachAChecker;
 import com.luminex_studios.lxac.managers.CheckManager;
 import com.luminex_studios.lxac.managers.DataManager;
 import com.luminex_studios.lxac.managers.FlagManager;
@@ -55,14 +59,18 @@ public class LXAC extends JavaPlugin implements PluginMessageListener {
         this.checkManager = new CheckManager(this);
 
         // ============================================================
-        // REGISTER YOUR CHECKS HERE
-        // Example (you can remove FlightA later and add your own):
+        // REGISTER CHECKS
         // ============================================================
         checkManager.register("FlightA", 30, new FlightAChecker(this));
-
-        // Example of how you will add more later:
-        // checkManager.register("SpeedA", 25, new SpeedAChecker(this));
-        // checkManager.register("KillAuraA", 15, new KillAuraAChecker(this));
+        checkManager.register("NukerA", 6, new NukerAChecker(this));
+        checkManager.register("NukerB", 8, new NukerBChecker(this));
+        checkManager.register("NukerC", 8, new NukerCChecker(this));
+        checkManager.register("ReachA", 15, new ReachAChecker(this));
+        checkManager.register("FastBreakA", 6, new FastBreakAChecker(this));
+        checkManager.register("BreakThroughA", 10, new BreakThroughAChecker(this));
+        checkManager.register("BaritoneA", 25, new BaritoneAChecker(this));
+        checkManager.register("RoboticA", 20, new RoboticAChecker(this));
+        checkManager.register("DigDebug", 999, new DigDebugChecker(this));
 
         PacketEvents.getAPI().init();
 

@@ -1,7 +1,7 @@
 name: LXAC
 version: '${project.version}'
 main: com.luminex_studios.lxac.LXAC
-api-version: '1.20'
+api-version: '1.21'
 author: Luminex Studios
 description: LXAC - PacketEvents based anticheat with Velocity bridge
 depend: [packetevents]

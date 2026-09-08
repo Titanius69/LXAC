@@ -64,3 +64,16 @@ Aliases: `/anticheat`, `/ac`
 
 ## Package
 `com.luminex_studios.lxac`
+
+## Working
+
+Nuker
+FastBreak
+Flight
+BreakTrough
+
+## Not Working
+
+Reach
+Robotic
+Baritone
