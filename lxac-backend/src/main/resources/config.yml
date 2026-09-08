@@ -1,0 +1,41 @@
+# LXAC Configuration
+# All messages and names are in English
+
+# Global settings
+settings:
+  # Prefix for all messages
+  prefix: "&c[LXAC] &7"
+  # Whether to send flags to Velocity proxy (requires LXAC Velocity plugin)
+  velocity-bridge: true
+  # Plugin messaging channel (must match on Velocity side)
+  channel: "lxac:flag"
+  # Server name sent to proxy (leave empty to use Bukkit server name)
+  server-name: ""
+
+# Violation system
+violations:
+  # How often the decay task runs (in seconds)
+  decay-interval-seconds: 10
+  # How many violations to remove per decay tick (per check)
+  decay-amount: 1
+  # If a player has no new flags for this many seconds, fully reset their violations for that check
+  # Set to 0 to disable full reset (only gradual decay)
+  full-reset-after-seconds: 60
+  # Maximum violations that can be stored for a single check (safety cap)
+  max-violations: 100
+
+# Check configurations
+# threshold = number of flags required before punishment (kick)
+# enabled = whether the check is active
+# You can add new checks here later – the name must match the one used in CheckManager.register(...)
+checks:
+  FlightA:
+    enabled: true
+    threshold: 30
+  # Example for future checks:
+  # SpeedA:
+  #   enabled: true
+  #   threshold: 25
+  # KillAuraA:
+  #   enabled: true
+  #   threshold: 15

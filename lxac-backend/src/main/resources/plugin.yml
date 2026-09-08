@@ -1,0 +1,21 @@
+name: LXAC
+version: '${project.version}'
+main: com.luminex_studios.lxac.LXAC
+api-version: '1.20'
+author: Luminex Studios
+description: LXAC - PacketEvents based anticheat with Velocity bridge
+depend: [packetevents]
+softdepend: []
+commands:
+  lxac:
+    description: LXAC admin commands
+    permission: lxac.admin
+    usage: /lxac <reload|info|violations>
+    aliases: [anticheat, ac]
+permissions:
+  lxac.admin:
+    description: Receive flag notifications and use admin commands
+    default: op
+  lxac.bypass:
+    description: Bypass all checks
+    default: false

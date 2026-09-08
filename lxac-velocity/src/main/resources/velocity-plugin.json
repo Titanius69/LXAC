@@ -1,0 +1,9 @@
+{
+  "id": "lxac",
+  "name": "LXAC-Velocity",
+  "version": "1.0.0",
+  "description": "LXAC Velocity bridge – network-wide flags and kicks",
+  "authors": ["Luminex Studios"],
+  "dependencies": [],
+  "main": "com.luminex_studios.lxac.velocity.LXACVelocity"
+}
