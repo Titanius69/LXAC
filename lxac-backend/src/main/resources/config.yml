@@ -18,34 +18,34 @@ checks:
     threshold: 30
   NukerA:
     enabled: true
-    threshold: 6
+    threshold: 4
   NukerB:
     enabled: true
-    threshold: 6
+    threshold: 4
   NukerC:
     enabled: true
-    threshold: 8
+    threshold: 4
   ReachA:
     enabled: true
     threshold: 12
   FastBreakA:
     enabled: true
-    threshold: 6
+    threshold: 10
   BreakThroughA:
     enabled: true
     threshold: 10
   BaritoneA:
     enabled: true
-    threshold: 25
+    threshold: 5
   BaritoneB:
     enabled: true
     threshold: 5
   BaritoneC:
     enabled: true
-    threshold: 1
+    threshold: 2
   RoboticA:
     enabled: true
-    threshold: 18
+    threshold: 5
   DigDebug:
     enabled: false
     threshold: 999

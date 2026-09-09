@@ -1,6 +1,6 @@
 # LXAC (Backend – Paper/Spigot)
 
-PacketEvents-based anticheat foundation by Luminex Studios with Velocity support.
+PacketEvents-based Doomsday anticheat foundation by Luminex Studios with Velocity support.
 
 ## Features
 
@@ -69,7 +69,7 @@ Aliases: `/anticheat`, `/ac`
 
 - Nuker
 - FastBreak
-- Flight
+- Flight/Fly
 - BreakTrough
 - Reach
 - Baritone (BaritoneA, BaritoneB)
@@ -77,6 +77,74 @@ Aliases: `/anticheat`, `/ac`
 ## Not Working
 
 - BaritoneC
+
+## Planned
+
+- InventoryMove  
+- NoJumpDelay  
+- NoSlowDown  
+- EntityControl  
+- StairsSpeed  
+- WaterWalk  
+- FastAccel  
+- SafeWalk  
+- FastStop  
+- NoPush  
+- Spider  
+- NoFall  
+- Strafe  
+- Sprint  
+- Step  
+- NoFriendDamage  
+- NoChangeHotbar  
+- CooldownSync  
+- KeybindFriend  
+- ClientSpoofer  
+- KeybindPearl  
+- ItemScrollr  
+- AutoLeave  
+- PingSpoof  
+- NoEntityInteract  
+- AutoRespawn  
+- ChestStealer  
+- GhostHand  
+- AntiHunger  
+- NoRotate  
+- NoSwing  
+- AutoTool  
+- AutoFish  
+- Scaffold  
+- XCarry  
+- Timer  
+- Blink  
+- CrystalOptimizer  
+- ClickAimAssist  
+- CobwebPlacer  
+- ShieldBreaker  
+- MaceDamage  
+- AntiMisclick  
+- AutoCrystal  
+- AutoClicker  
+- ElytraSwap  
+- JumpReset  
+- NoHitDelay  
+- MaceSwap  
+- AutoTotem  
+- AutoArmor  
+- TriggerBot  
+- AutoShoot  
+- AimAssist  
+- Misplace  
+- Hitboxes  
+- Velocity  
+- Teams  
+- WTap  
+- SaverBreakBlock  
+- NoGlitchBlock  
+- PacketBreak  
+- BlockFixer  
+- FastPlace  
+- AutoMine  
 
 ## Credits
 
