@@ -1,10 +1,13 @@
 package com.luminex_studios.lxac;
 
 import com.luminex_studios.lxac.checks.baritone.BaritoneAChecker;
+import com.luminex_studios.lxac.checks.baritone.BaritoneBChecker;
+import com.luminex_studios.lxac.checks.baritone.BaritoneCChecker;
 import com.luminex_studios.lxac.checks.baritone.RoboticAChecker;
 import com.luminex_studios.lxac.checks.flight.FlightAChecker;
 import com.luminex_studios.lxac.checks.nuker.*;
 import com.luminex_studios.lxac.checks.reach.ReachAChecker;
+import com.luminex_studios.lxac.checks.reach.ReachBChecker;
 import com.luminex_studios.lxac.managers.CheckManager;
 import com.luminex_studios.lxac.managers.DataManager;
 import com.luminex_studios.lxac.managers.FlagManager;
@@ -66,9 +69,17 @@ public class LXAC extends JavaPlugin implements PluginMessageListener {
         checkManager.register("NukerB", 8, new NukerBChecker(this));
         checkManager.register("NukerC", 8, new NukerCChecker(this));
         checkManager.register("ReachA", 15, new ReachAChecker(this));
+        checkManager.register("ReachB", 15, new ReachBChecker(this));
         checkManager.register("FastBreakA", 6, new FastBreakAChecker(this));
         checkManager.register("BreakThroughA", 10, new BreakThroughAChecker(this));
         checkManager.register("BaritoneA", 25, new BaritoneAChecker(this));
+
+        BaritoneBChecker baritoneB = new BaritoneBChecker(this);
+        checkManager.register("BaritoneB", 5, baritoneB);
+        getServer().getPluginManager().registerEvents(baritoneB, this);
+
+        checkManager.register("BaritoneC", 1, new BaritoneCChecker(this));
+
         checkManager.register("RoboticA", 20, new RoboticAChecker(this));
         checkManager.register("DigDebug", 999, new DigDebugChecker(this));
 

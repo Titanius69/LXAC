@@ -37,6 +37,12 @@ checks:
   BaritoneA:
     enabled: true
     threshold: 25
+  BaritoneB:
+    enabled: true
+    threshold: 5
+  BaritoneC:
+    enabled: true
+    threshold: 1
   RoboticA:
     enabled: true
     threshold: 18

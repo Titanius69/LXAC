@@ -67,13 +67,25 @@ Aliases: `/anticheat`, `/ac`
 
 ## Working
 
-Nuker
-FastBreak
-Flight
-BreakTrough
+- Nuker
+- FastBreak
+- Flight
+- BreakTrough
+- Reach
+- Baritone (BaritoneA, BaritoneB)
 
 ## Not Working
 
-Reach
-Robotic
-Baritone
+- BaritoneC
+
+## Credits
+
+- `BaritoneBChecker` (and its supporting `util.RayLine` / `util.RayUtils`
+  helpers) is ported from **AntiBaritoneX** by Kireiko-dev, originally
+  implemented in `PatternCheck.java`:
+  https://github.com/Kireiko-dev/AntiBaritoneX
+
+  The original implementation ran on Bukkit's `PlayerMoveEvent`; it has
+  been adapted here to run on packet-level rotation/position packets
+  (via PacketEvents) and integrated into LXAC's `Check` / `PlayerData` /
+  violation-flagging system.

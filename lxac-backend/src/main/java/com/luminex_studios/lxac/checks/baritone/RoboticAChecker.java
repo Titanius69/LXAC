@@ -1,32 +1,45 @@
 package com.luminex_studios.lxac.checks.baritone;
 
-import com.luminex_studios.lxac.LXAC;
-import com.luminex_studios.lxac.checks.Check;
-import com.luminex_studios.lxac.data.PlayerData;
 import com.github.retrooper.packetevents.event.PacketReceiveEvent;
 import com.github.retrooper.packetevents.protocol.packettype.PacketType;
 import com.github.retrooper.packetevents.wrapper.play.client.WrapperPlayClientPlayerFlying;
+import com.luminex_studios.lxac.LXAC;
+import com.luminex_studios.lxac.checks.Check;
+import com.luminex_studios.lxac.data.PlayerData;
 import org.bukkit.entity.Player;
 
-/**
- * RoboticA - Detects aimbot / robotic rotation patterns.
- *
- * Does NOT flag normal aggressive turning / flicking.
- * Flags:
- * 1) Many nearly-identical rotation deltas in a row (machine-like consistency)
- * 2) Extreme impossible snaps repeated in a very short window
- */
+import java.util.ArrayDeque;
+import java.util.Deque;
+
 public class RoboticAChecker extends Check {
 
-    // Single large flick is normal in PvP – only care about spam of huge snaps
-    private static final float HUGE_SNAP_YAW = 140.0f;
-    private static final float HUGE_SNAP_PITCH = 80.0f;
-    private static final int HUGE_SNAP_COUNT = 4;
-    private static final long HUGE_SNAP_WINDOW_MS = 800;
+    private static final int SAMPLE_SIZE = 30;
 
-    // Identical micro deltas (aimbot smooth)
-    private static final int IDENTICAL_STREAK = 25;
-    private static final float DELTA_EPSILON = 0.0008f;
+    /*
+     * Extremely large repeated rotations.
+     */
+    private static final float SNAP_YAW = 135.0f;
+    private static final float SNAP_PITCH = 70.0f;
+    private static final int SNAP_REQUIRED = 3;
+    private static final long SNAP_WINDOW = 1200L;
+
+    /*
+     * Rotation deltas repeated with extremely similar values.
+     */
+    private static final float SAME_EPSILON = 0.015f;
+    private static final int SAME_REQUIRED = 10;
+
+    /*
+     * Detects very artificial rotation sequences.
+     */
+    private static final double LOW_VARIANCE_YAW = 0.025;
+    private static final double LOW_VARIANCE_PITCH = 0.025;
+    private static final int LOW_VARIANCE_REQUIRED = 3;
+
+    /*
+     * VL prevents one accidental pattern from immediately flagging.
+     */
+    private static final int FLAG_VL = 5;
 
     public RoboticAChecker(LXAC plugin) {
         super(plugin, "RoboticA");
@@ -34,97 +47,440 @@ public class RoboticAChecker extends Check {
 
     @Override
     public void onPacketReceive(PacketReceiveEvent event) {
+
         if (event.getPacketType() != PacketType.Play.Client.PLAYER_ROTATION
-                && event.getPacketType() != PacketType.Play.Client.PLAYER_POSITION_AND_ROTATION) {
+                && event.getPacketType()
+                != PacketType.Play.Client.PLAYER_POSITION_AND_ROTATION) {
             return;
         }
 
         Player player = (Player) event.getPlayer();
-        if (player == null || !player.isOnline()) return;
+
+        if (player == null || !player.isOnline()) {
+            return;
+        }
 
         try {
-            WrapperPlayClientPlayerFlying flying = new WrapperPlayClientPlayerFlying(event);
-            if (!flying.hasRotationChanged()) return;
+
+            WrapperPlayClientPlayerFlying flying =
+                    new WrapperPlayClientPlayerFlying(event);
+
+            if (!flying.hasRotationChanged()) {
+                return;
+            }
 
             float yaw = flying.getLocation().getYaw();
             float pitch = flying.getLocation().getPitch();
 
             PlayerData data = getData(player);
-            Float lastYaw = data.getCustomData("rob_last_yaw");
-            Float lastPitch = data.getCustomData("rob_last_pitch");
-            data.setCustomData("rob_last_yaw", yaw);
-            data.setCustomData("rob_last_pitch", pitch);
 
-            if (lastYaw == null || lastPitch == null) return;
+            Float lastYaw =
+                    data.getCustomData("robot_last_yaw");
 
-            float deltaYaw = Math.abs(normalizeYaw(yaw - lastYaw));
-            float deltaPitch = Math.abs(pitch - lastPitch);
+            Float lastPitch =
+                    data.getCustomData("robot_last_pitch");
 
-            // --- 1) Repeated huge snaps (not a single flick) ---
+            data.setCustomData(
+                    "robot_last_yaw",
+                    yaw
+            );
+
+            data.setCustomData(
+                    "robot_last_pitch",
+                    pitch
+            );
+
+            if (lastYaw == null || lastPitch == null) {
+                return;
+            }
+
+            float deltaYaw =
+                    Math.abs(normalizeYaw(yaw - lastYaw));
+
+            float deltaPitch =
+                    Math.abs(pitch - lastPitch);
+
+            if (deltaYaw < 0.0001f
+                    && deltaPitch < 0.0001f) {
+                return;
+            }
+
+            /*
+             * =========================================================
+             * SNAP CHECK
+             * =========================================================
+             */
+
             long now = System.currentTimeMillis();
-            if (deltaYaw > HUGE_SNAP_YAW || deltaPitch > HUGE_SNAP_PITCH) {
-                Integer count = data.getCustomData("rob_huge_count");
-                Long windowStart = data.getCustomData("rob_huge_start");
-                if (count == null) count = 0;
-                if (windowStart == null || now - windowStart > HUGE_SNAP_WINDOW_MS) {
-                    count = 0;
-                    windowStart = now;
-                }
-                count++;
-                data.setCustomData("rob_huge_count", count);
-                data.setCustomData("rob_huge_start", windowStart);
 
-                if (count >= HUGE_SNAP_COUNT) {
-                    flag(player, String.format("hugeSnaps=%d yaw=%.1f pitch=%.1f", count, deltaYaw, deltaPitch));
-                    data.setCustomData("rob_huge_count", 0);
+            if (deltaYaw >= SNAP_YAW
+                    || deltaPitch >= SNAP_PITCH) {
+
+                Integer snaps =
+                        data.getCustomData("robot_snaps");
+
+                Long start =
+                        data.getCustomData("robot_snap_start");
+
+                if (snaps == null) {
+                    snaps = 0;
+                }
+
+                if (start == null
+                        || now - start > SNAP_WINDOW) {
+
+                    snaps = 0;
+                    start = now;
+                }
+
+                snaps++;
+
+                data.setCustomData(
+                        "robot_snaps",
+                        snaps
+                );
+
+                data.setCustomData(
+                        "robot_snap_start",
+                        start
+                );
+
+                if (snaps >= SNAP_REQUIRED) {
+
+                    violation(
+                            data,
+                            player,
+                            String.format(
+                                    "repeated snap dy=%.2f dp=%.2f",
+                                    deltaYaw,
+                                    deltaPitch
+                            )
+                    );
+
+                    data.setCustomData(
+                            "robot_snaps",
+                            0
+                    );
                 }
             }
 
-            // --- 2) Near-identical consecutive deltas (robotic smooth aim) ---
-            // Skip when almost no rotation or when clearly human large moves
-            if (deltaYaw < 0.01f && deltaPitch < 0.01f) {
-                data.setCustomData("rob_ident_streak", 0);
+            /*
+             * =========================================================
+             * IDENTICAL DELTA CHECK
+             * =========================================================
+             */
+
+            Float previousYawDelta =
+                    data.getCustomData("robot_previous_dy");
+
+            Float previousPitchDelta =
+                    data.getCustomData("robot_previous_dp");
+
+            data.setCustomData(
+                    "robot_previous_dy",
+                    deltaYaw
+            );
+
+            data.setCustomData(
+                    "robot_previous_dp",
+                    deltaPitch
+            );
+
+            if (previousYawDelta != null
+                    && previousPitchDelta != null) {
+
+                boolean same =
+                        Math.abs(
+                                deltaYaw - previousYawDelta
+                        ) <= SAME_EPSILON
+                                &&
+                                Math.abs(
+                                        deltaPitch - previousPitchDelta
+                                ) <= SAME_EPSILON;
+
+                Integer streak =
+                        data.getCustomData("robot_same_streak");
+
+                if (streak == null) {
+                    streak = 0;
+                }
+
+                if (same) {
+                    streak++;
+                } else {
+                    streak = Math.max(
+                            0,
+                            streak - 2
+                    );
+                }
+
+                data.setCustomData(
+                        "robot_same_streak",
+                        streak
+                );
+
+                if (streak >= SAME_REQUIRED) {
+
+                    violation(
+                            data,
+                            player,
+                            String.format(
+                                    "repeated rotation dy=%.4f dp=%.4f streak=%d",
+                                    deltaYaw,
+                                    deltaPitch,
+                                    streak
+                            )
+                    );
+
+                    data.setCustomData(
+                            "robot_same_streak",
+                            0
+                    );
+                }
+            }
+
+            /*
+             * =========================================================
+             * LOW VARIANCE ROTATION
+             * =========================================================
+             */
+
+            /*
+             * Ignore huge human flicks for this part.
+             */
+            if (deltaYaw > 45.0f
+                    || deltaPitch > 30.0f) {
+
+                clearSamples(data);
                 return;
             }
-            // Large human flicks break the identical streak
-            if (deltaYaw > 15.0f || deltaPitch > 10.0f) {
-                data.setCustomData("rob_ident_streak", 0);
-                data.setCustomData("rob_prev_dy", null);
-                data.setCustomData("rob_prev_dp", null);
+
+            @SuppressWarnings("unchecked")
+            Deque<Float> yawSamples =
+                    data.getCustomData("robot_yaw_samples");
+
+            @SuppressWarnings("unchecked")
+            Deque<Float> pitchSamples =
+                    data.getCustomData("robot_pitch_samples");
+
+            if (yawSamples == null) {
+                yawSamples = new ArrayDeque<>();
+                data.setCustomData(
+                        "robot_yaw_samples",
+                        yawSamples
+                );
+            }
+
+            if (pitchSamples == null) {
+                pitchSamples = new ArrayDeque<>();
+                data.setCustomData(
+                        "robot_pitch_samples",
+                        pitchSamples
+                );
+            }
+
+            yawSamples.addLast(deltaYaw);
+            pitchSamples.addLast(deltaPitch);
+
+            while (yawSamples.size() > SAMPLE_SIZE) {
+                yawSamples.removeFirst();
+            }
+
+            while (pitchSamples.size() > SAMPLE_SIZE) {
+                pitchSamples.removeFirst();
+            }
+
+            if (yawSamples.size() < SAMPLE_SIZE) {
                 return;
             }
 
-            Float prevDy = data.getCustomData("rob_prev_dy");
-            Float prevDp = data.getCustomData("rob_prev_dp");
-            data.setCustomData("rob_prev_dy", deltaYaw);
-            data.setCustomData("rob_prev_dp", deltaPitch);
+            double yawMean =
+                    average(yawSamples);
 
-            if (prevDy == null || prevDp == null) return;
+            double pitchMean =
+                    average(pitchSamples);
 
-            boolean same = Math.abs(deltaYaw - prevDy) < DELTA_EPSILON
-                    && Math.abs(deltaPitch - prevDp) < DELTA_EPSILON;
+            /*
+             * Do not detect a player who is basically standing still.
+             */
+            if (yawMean < 0.03
+                    && pitchMean < 0.03) {
 
-            Integer streak = data.getCustomData("rob_ident_streak");
-            if (streak == null) streak = 0;
+                clearSamples(data);
+                return;
+            }
 
-            if (same) {
-                streak++;
-                data.setCustomData("rob_ident_streak", streak);
-                if (streak >= IDENTICAL_STREAK) {
-                    flag(player, String.format("identicalDeltas streak=%d dy=%.4f", streak, deltaYaw));
-                    data.setCustomData("rob_ident_streak", 0);
-                }
+            double yawStd =
+                    standardDeviation(
+                            yawSamples,
+                            yawMean
+                    );
+
+            double pitchStd =
+                    standardDeviation(
+                            pitchSamples,
+                            pitchMean
+                    );
+
+            boolean lowVariance =
+                    yawStd <= LOW_VARIANCE_YAW
+                            && pitchStd <= LOW_VARIANCE_PITCH;
+
+            Integer lowVarianceStreak =
+                    data.getCustomData(
+                            "robot_lowvar_streak"
+                    );
+
+            if (lowVarianceStreak == null) {
+                lowVarianceStreak = 0;
+            }
+
+            if (lowVariance) {
+                lowVarianceStreak++;
             } else {
-                data.setCustomData("rob_ident_streak", 0);
+                lowVarianceStreak =
+                        Math.max(
+                                0,
+                                lowVarianceStreak - 1
+                        );
             }
+
+            data.setCustomData(
+                    "robot_lowvar_streak",
+                    lowVarianceStreak
+            );
+
+            if (lowVarianceStreak >= LOW_VARIANCE_REQUIRED) {
+
+                violation(
+                        data,
+                        player,
+                        String.format(
+                                "low rotation variance yaw=%.5f pitch=%.5f",
+                                yawStd,
+                                pitchStd
+                        )
+                );
+
+                clearSamples(data);
+            }
+
         } catch (Exception ignored) {
         }
     }
 
+    private void violation(
+            PlayerData data,
+            Player player,
+            String reason
+    ) {
+
+        Integer vl =
+                data.getCustomData("robot_vl");
+
+        if (vl == null) {
+            vl = 0;
+        }
+
+        vl++;
+
+        data.setCustomData(
+                "robot_vl",
+                vl
+        );
+
+        if (vl >= FLAG_VL) {
+
+            flag(
+                    player,
+                    reason + " vl=" + vl
+            );
+
+            data.setCustomData(
+                    "robot_vl",
+                    Math.max(0, vl - 2)
+            );
+        }
+    }
+
+    private void clearSamples(PlayerData data) {
+
+        @SuppressWarnings("unchecked")
+        Deque<Float> yaw =
+                data.getCustomData("robot_yaw_samples");
+
+        @SuppressWarnings("unchecked")
+        Deque<Float> pitch =
+                data.getCustomData("robot_pitch_samples");
+
+        if (yaw != null) {
+            yaw.clear();
+        }
+
+        if (pitch != null) {
+            pitch.clear();
+        }
+
+        data.setCustomData(
+                "robot_lowvar_streak",
+                0
+        );
+    }
+
+    private double average(
+            Deque<Float> values
+    ) {
+
+        if (values.isEmpty()) {
+            return 0.0;
+        }
+
+        double total = 0.0;
+
+        for (float value : values) {
+            total += value;
+        }
+
+        return total / values.size();
+    }
+
+    private double standardDeviation(
+            Deque<Float> values,
+            double mean
+    ) {
+
+        if (values.isEmpty()) {
+            return 0.0;
+        }
+
+        double variance = 0.0;
+
+        for (float value : values) {
+
+            double difference =
+                    value - mean;
+
+            variance +=
+                    difference * difference;
+        }
+
+        variance /= values.size();
+
+        return Math.sqrt(variance);
+    }
+
     private float normalizeYaw(float yaw) {
-        yaw %= 360f;
-        if (yaw > 180f) yaw -= 360f;
-        if (yaw < -180f) yaw += 360f;
+
+        yaw %= 360.0f;
+
+        if (yaw > 180.0f) {
+            yaw -= 360.0f;
+        }
+
+        if (yaw < -180.0f) {
+            yaw += 360.0f;
+        }
+
         return yaw;
     }
 }
